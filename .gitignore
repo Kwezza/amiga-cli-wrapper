@@ -1,0 +1,43 @@
+# Executables
+amiga-cli-wrapper
+*.exe
+
+# Build artifacts
+*.lnk
+*.sym
+*.map
+*.lha
+
+# Object files
+*.o
+obj/
+# Allow precompiled library objects if needed
+!src/libs/**/*.o
+
+# Cache directories
+cache/
+install/
+
+# Backup files
+*.bak
+*.orig
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Build directories
+build/
+bin/
+
+# Temporary files
+tmp/
+temp/
+
+# IDE files
+.vscode/settings.json
+.vscode/launch.json
+
+# Debug files
+debug_*
