@@ -56,6 +56,35 @@ bool cli_wrapper_init(void);
  */
 void cli_wrapper_cleanup(void);
 
+/**
+ * @brief List files in a ZIP archive and calculate total uncompressed size
+ *
+ * Executes the specified unzip list command (e.g., "unzip -l archive.zip") and parses
+ * the output to extract file information and calculate total size. All parsing
+ * and progress is logged to logfile.txt.
+ *
+ * @param cmd Complete command string to execute (e.g., "unzip -l archive.zip")
+ * @param out_total Pointer to receive total uncompressed size in bytes
+ * @return true if command executed successfully and parsing completed
+ * @return false if command failed or parsing errors occurred
+ */
+bool unzip_list(const char *cmd, uint32_t *out_total);
+
+/**
+ * @brief Extract files from a ZIP archive with real-time progress tracking
+ *
+ * Executes the specified unzip extract command (e.g., "unzip archive.zip -d dest/")
+ * and parses the output line-by-line to track progress. Each extracted file
+ * contributes to a cumulative byte count, with percentage calculated against
+ * the expected total. All parsing and progress is logged to logfile.txt.
+ *
+ * @param cmd Complete command string to execute (e.g., "unzip archive.zip -d dest/")
+ * @param total_expected Total bytes expected to be extracted (from unzip_list)
+ * @return true if extraction completed successfully
+ * @return false if extraction failed
+ */
+bool unzip_extract(const char *cmd, uint32_t total_expected);
+
 #ifdef __cplusplus
 }
 #endif
