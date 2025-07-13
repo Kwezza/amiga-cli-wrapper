@@ -1,0 +1,38 @@
+{
+    "configurations": [
+        {
+            "name": "Amiga",
+            "includePath": [
+                "C:/VBCC/targets/m68k-amigaos/include",
+                "C:/VBCC/targets/m68k-amigaos/include/proto",
+                "C:/VBCC/targets/m68k-amigaos/include/inline",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src"
+            ],
+            "defines": [
+                "__VBCC__",
+                "AMIGA",
+                "WORKBENCH_3_2",
+                "__AMIGA__",
+                "_M68K_",
+                "__M68K__",
+                "__mc68000__",
+                "EXEC_TYPES_H",
+                "DOS_DOS_H"
+            ],
+            "compilerPath": "C:/VBCC/bin/vc.exe",
+            "cStandard": "c89",
+            "cppStandard": "c++98",
+            "intelliSenseMode": "gcc-arm",
+            "browse": {
+                "path": [
+                    "C:/VBCC/targets/m68k-amigaos/include",
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/src"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

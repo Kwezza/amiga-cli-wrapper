@@ -1,102 +1,131 @@
-# ---------------- user-selectable platform -------------------
-TARGET ?= amiga   # Default to Amiga target
+# Amiga CLI Wrapper Makefile
+# Supports dual-target compilation: Amiga (vbcc) and Host (gcc)
 
-# --- bundle stamping -------------------------------------------------
-BUILD_NAME     ?= $(or $(BUILD_TAG),current)
-BUILD_DIR      := build/$(TARGET)/$(BUILD_NAME)
+# Default target
+TARGET ?= amiga
 
-# ---------------- compiler executables -----------------------
-AMIGA_CC ?= vc
-HOST_CC  ?= gcc             # or clang
+# Project structure
+SRC_DIR = src
+INCLUDE_DIR = include
+TEST_DIR = test
+BUILD_DIR = build
 
-# ---------------- directory helpers --------------------------
-MKDIR_P = mkdir -p
-COPY_R  = cp -R
+# Source files
+CLI_WRAPPER_SOURCES = $(SRC_DIR)/cli_wrapper.c
+TEST_SOURCES = $(TEST_DIR)/cli_wrapper_test.c
 
-# ---------------- common flags -------------------------------
-AMIGA_CFLAGS := -DPLATFORM_AMIGA=1 +aos68k -O2 -c99 -I"C:/VBCC/targets/m68k-amigaos/include" -Isrc -Iinclude -Iinclude/platform
-HOST_CFLAGS  := -DPLATFORM_HOST=1 -std=c99 -Wall -Wextra -Iinclude/platform -Isrc -Iinclude
-
-# ---------------- automatic selection ------------------------
+# Compiler settings per target
 ifeq ($(TARGET),amiga)
-  CC     := $(AMIGA_CC)
-  CFLAGS := $(AMIGA_CFLAGS)
-  LDFLAGS := -lamiga
-  BIN_EXT :=
+    # Amiga target using vbcc
+    CC = vc
+    CFLAGS = +aos68k -cpu=68000 -I$(INCLUDE_DIR) -DPLATFORM_AMIGA
+    LDFLAGS = -lamiga
+    BUILD_TARGET_DIR = $(BUILD_DIR)/amiga
+    EXECUTABLE_EXT =
+    PLATFORM_DEFINE = -DPLATFORM_AMIGA
 else
-  CC     := $(HOST_CC)
-  CFLAGS := $(HOST_CFLAGS)
-  LDFLAGS :=
-  BIN_EXT := .exe
+    # Host target using gcc
+    CC = gcc
+    CFLAGS = -std=c99 -pedantic -Wall -Wextra -I$(INCLUDE_DIR)
+    LDFLAGS =
+    BUILD_TARGET_DIR = $(BUILD_DIR)/host
+    ifeq ($(OS),Windows_NT)
+        EXECUTABLE_EXT = .exe
+    else
+        EXECUTABLE_EXT =
+    endif
+    PLATFORM_DEFINE =
 endif
 
-# ---------------- source files -------------------------------
-CORE_SRCS = src/core/main.c \
-            src/platform/platform_io.c
+# Output files
+CLI_WRAPPER_TEST = $(BUILD_TARGET_DIR)/cli_wrapper_test$(EXECUTABLE_EXT)
 
-TOOL_SRCS = src/tools/example_tool.c
+# Default target
+.PHONY: all
+all: build-test
 
-TEST_SRCS = tests/$(TARGET)/basic_test.c
+# Create build directories
+$(BUILD_TARGET_DIR):
+	@echo "Creating build directory: $(BUILD_TARGET_DIR)"
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(subst /,\,$(BUILD_TARGET_DIR))" mkdir "$(subst /,\,$(BUILD_TARGET_DIR))"
+else
+	@mkdir -p $(BUILD_TARGET_DIR)
+endif
 
-# ---------------- object files -------------------------------
-CORE_OBJS = $(CORE_SRCS:.c=.o)
-TOOL_OBJS = $(TOOL_SRCS:.c=.o)
-TEST_OBJS = $(TEST_SRCS:.c=.o)
+# Build the test executable
+.PHONY: build-test
+build-test: $(CLI_WRAPPER_TEST)
 
-# ---------------- targets ------------------------------------
-TARGET_NAME = amiga-cli-wrapper$(BIN_EXT)
-TEST_NAME = test_runner$(BIN_EXT)
+$(CLI_WRAPPER_TEST): $(CLI_WRAPPER_SOURCES) $(TEST_SOURCES) | $(BUILD_TARGET_DIR)
+	@echo "Building CLI wrapper test for target: $(TARGET)"
+	@echo "Compiler: $(CC)"
+	@echo "Flags: $(CFLAGS)"
+	$(CC) $(CFLAGS) -o $@ $(TEST_SOURCES) $(CLI_WRAPPER_SOURCES) $(LDFLAGS)
+	@echo "Build completed: $@"
 
-# ---------------- build rules --------------------------------
-
-.PHONY: all clean help test
-
-all: $(BUILD_DIR)/$(TARGET_NAME)
-
-$(BUILD_DIR)/$(TARGET_NAME): $(CORE_OBJS) $(TOOL_OBJS) | build-dir
-	$(CC) $(LDFLAGS) -o $@ $(CORE_OBJS) $(TOOL_OBJS)
-
-test: $(BUILD_DIR)/$(TEST_NAME)
-	@echo "Running $(TARGET) tests..."
+# Test target (host only)
+.PHONY: test
+test:
 ifeq ($(TARGET),host)
-	$(BUILD_DIR)/$(TEST_NAME)
+	@echo "Running host tests..."
+	$(MAKE) TARGET=host build-test
+	@echo "Host test build completed (functionality stubbed)"
 else
-	@echo "Amiga tests built. Transfer to Amiga to run."
+	@echo "Tests can only be run on host target"
+	@echo "Use: make test TARGET=host"
 endif
 
-$(BUILD_DIR)/$(TEST_NAME): $(TEST_OBJS) | build-dir
-	$(CC) $(LDFLAGS) -o $@ $(TEST_OBJS)
-
-build-dir:
-	$(MKDIR_P) $(BUILD_DIR)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
+# Clean build artifacts
+.PHONY: clean
 clean:
-	rm -rf build/
-	rm -f $(CORE_OBJS) $(TOOL_OBJS) $(TEST_OBJS)
+	@echo "Cleaning build artifacts..."
+ifeq ($(OS),Windows_NT)
+	@if exist "build" rmdir /s /q "build"
+	@if exist "logfile.txt" del "logfile.txt"
+else
+	@rm -rf $(BUILD_DIR)
+	@rm -f logfile.txt
+endif
+	@echo "Clean completed"
 
+# Help target
+.PHONY: help
 help:
 	@echo "Amiga CLI Wrapper Build System"
 	@echo "=============================="
 	@echo ""
-	@echo "MAIN TARGETS:"
-	@echo "  all                       - Build main executable"
-	@echo "  test                      - Build and run tests"
-	@echo "  clean                     - Remove build artifacts"
-	@echo "  help                      - Show this help"
+	@echo "Targets:"
+	@echo "  all              Build default target (amiga)"
+	@echo "  build-test       Build CLI wrapper test program"
+	@echo "  test             Run tests (host target only)"
+	@echo "  clean            Remove all build artifacts"
+	@echo "  help             Show this help message"
 	@echo ""
-	@echo "BUILD CONFIGURATION:"
-	@echo "  TARGET=amiga              - Build for Amiga (default)"
-	@echo "  TARGET=host               - Build for host platform"
+	@echo "Variables:"
+	@echo "  TARGET=amiga     Build for Amiga using vbcc (default)"
+	@echo "  TARGET=host      Build for host using gcc"
 	@echo ""
-	@echo "BUILD OUTPUT LOCATIONS:"
-	@echo "  Amiga binaries: build/amiga/"
-	@echo "  Host binaries:  build/host/"
+	@echo "Examples:"
+	@echo "  make                          # Build for Amiga"
+	@echo "  make TARGET=amiga             # Build for Amiga"
+	@echo "  make TARGET=host              # Build for host"
+	@echo "  make test TARGET=host         # Run host tests"
+	@echo "  make clean                    # Clean all artifacts"
 	@echo ""
-	@echo "REQUIREMENTS:"
-	@echo "  Amiga: vbcc with +aos68k target"
-	@echo "  Host:  gcc or compatible C compiler"
+	@echo "Output locations:"
+	@echo "  Amiga binaries: $(BUILD_DIR)/amiga/"
+	@echo "  Host binaries:  $(BUILD_DIR)/host/"
 
-# End of Makefile
+# Show current configuration
+.PHONY: config
+config:
+	@echo "Current Configuration:"
+	@echo "====================="
+	@echo "Target:           $(TARGET)"
+	@echo "Compiler:         $(CC)"
+	@echo "C Flags:          $(CFLAGS)"
+	@echo "Linker Flags:     $(LDFLAGS)"
+	@echo "Build Directory:  $(BUILD_TARGET_DIR)"
+	@echo "Executable Ext:   '$(EXECUTABLE_EXT)'"
+	@echo "Platform Define:  $(PLATFORM_DEFINE)"

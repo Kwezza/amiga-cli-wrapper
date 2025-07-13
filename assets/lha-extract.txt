@@ -1,0 +1,45 @@
+LhA V1.10 - Copyright © 1991,92 Stefan Boberg. Not for commercial use.
+
+[0 pExtracting from archive 'assets/A10TankKiller_v2.0_3Disk.lha':[K
+ Extracting: (     900)  A10TankKiller3Disk.info[K
+[0m Extracting: (    8098)  A10TankKiller3Disk/A10TankKiller3Disk.info[K
+[0m Extracting: (    3656)  A10TankKiller3Disk/A10TankKiller3Disk.Slave[K
+[0m Extracting: (   10380)  A10TankKiller3Disk/data/A10[K
+[0m Extracting: (   82756)  A10TankKiller3Disk/data/A10.sfx[K
+[0m Extracting: (    5562)  A10TankKiller3Disk/data/A10_20.icon[K
+[0m Extracting: (    8008)  A10TankKiller3Disk/data/AmigaSnd.drv[K
+[0m Extracting: (    1964)  A10TankKiller3Disk/data/c/avail[K
+[0m Extracting: (   11284)  A10TankKiller3Disk/data/c/More[K
+[0m Extracting: (    2568)  A10TankKiller3Disk/data/c/run[K
+[0m Extracting: (  233380)  A10TankKiller3Disk/data/Cmp1.001[K
+[0m Extracting: (     229)  A10TankKiller3Disk/data/Cmp1.RMF[K
+[0m Extracting: (  223108)  A10TankKiller3Disk/data/Cmp2.001[K
+[0m Extracting: (     229)  A10TankKiller3Disk/data/Cmp2.RMF[K
+[0m Extracting: (  144919)  A10TankKiller3Disk/data/Cmp3.001[K
+[0m Extracting: (     189)  A10TankKiller3Disk/data/Cmp3.RMF[K
+[0m Extracting: (      16)  A10TankKiller3Disk/data/control.prf[K
+[0m Extracting: (     232)  A10TankKiller3Disk/data/devs/system-configuration[K
+[0m Extracting: (     900)  A10TankKiller3Disk/data/Drawer.icon[K
+[0m Extracting: (     628)  A10TankKiller3Disk/data/Drawer20.icon[K
+[0m Extracting: (   30548)  A10TankKiller3Disk/data/Install[K
+[0m Extracting: (      92)  A10TankKiller3Disk/data/MName1.Dat[K
+[0m Extracting: (      95)  A10TankKiller3Disk/data/MName2.Dat[K
+[0m Extracting: (      92)  A10TankKiller3Disk/data/MName3.Dat[K
+[0m Extracting: (  167496)  A10TankKiller3Disk/data/PS[K
+[0m Extracting: (    1657)  A10TankKiller3Disk/data/ReadMe[K
+[0m Extracting: (  235808)  A10TankKiller3Disk/data/Sim[K
+[0m Extracting: (       5)  A10TankKiller3Disk/data/Vol1.Map[K
+[0m Extracting: (       5)  A10TankKiller3Disk/data/Vol2.Map[K
+[0m Extracting: (       5)  A10TankKiller3Disk/data/Vol3.Map[K
+[0m Extracting: (  396448)  A10TankKiller3Disk/data/Volume.001[K
+[0m Extracting: (  517925)  A10TankKiller3Disk/data/Volume.002[K
+[0m Extracting: (  199451)  A10TankKiller3Disk/data/Volume.003[K
+[0m Extracting: (     891)  A10TankKiller3Disk/data/Volume.RMF[K
+[0m Extracting: (   47664)  A10TankKiller3Disk/Manual[K
+[0m Extracting: (    1396)  A10TankKiller3Disk/Manual.info[K
+[0m Extracting: (    2018)  A10TankKiller3Disk/ReadMe[K
+[0m Extracting: (    1396)  A10TankKiller3Disk/ReadMe.info[K
+[0m38 files extracted, all files OK.[K
+
+Operation successful.
+[K[1 p[0m

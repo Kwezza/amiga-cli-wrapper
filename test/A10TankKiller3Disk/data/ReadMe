@@ -1,0 +1,38 @@
+                     A10 Tank Killer Enhanced for the Amiga
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here are some tips for running Amiga A10E.
+
+
+- Make copies of your original game disks NOW!  A10E is not copy protected
+  so you may backup your disks or install the game on a hard disk.
+
+- NEVER remove a disk while the drive light is on. In fact, never swap disks
+  unless instructed to do so by the program.
+
+- For best performance, leave A10E Disk #1 in any drive when playing this
+  game from floppy disks.
+
+- A10E supports 16-, 32-, and 64-color graphics modes, some with dithering
+  and light-source shading.  Try low graphics settings at first, increasing 
+  gradually until you're comfortable with the mix of speed and detail.  Most
+  Amigas will perform best in modes 1-5; accelerated machines will do well
+  in all eight.
+
+- Adjusting the world detail down will improve the speed of the game, as
+  will turning off sound effects.
+
+- If you have a hard disk but no extra memory (1MB only), music and sound
+  effects may be deactivated.  You may boot directly from copies of your
+  original game disks, or modify your Startup-Sequence to remove background
+  programs which may eat memory.
+
+- If you have LOTS of free RAM, you may copy all files from the A10E disks
+  to RAM: (the RAM disk) and run the game from there.
+
+- If your computer has no fast memory (as is the case with most newer Amiga
+  500s and 2000s) A10E will take longer to perform certain tasks. So...
+  if you see the message "Please Wait," then please do.
+
+- It's always a good idea to disable all screenblanker utilities before
+  running any commercial game.

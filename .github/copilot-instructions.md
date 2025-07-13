@@ -1,4 +1,4 @@
-# Copilot Coding Instructions
+ Copilot Coding Instructions
 *(Amiga CLI Wrapper — dual-target: Amiga / Host)*
 
 > **Context**
@@ -8,7 +8,7 @@
 >
 > The project uses a **unified source tree** with platform guards `#if PLATFORM_AMIGA` to isolate
 > Amiga-specific APIs. **Portable modules use standard C99 only.**
-> All memory allocation uses `malloc`/`free` through platform abstraction wrappers.
+> All memory allocation uses `malloc`/`free`
 
 ## Project Architecture
 
@@ -22,7 +22,7 @@
 - **`src/core/`** - Core CLI framework and utilities
 - **`src/platform/`** - Platform abstraction layer
 - **`src/tools/`** - Individual CLI tool implementations
-- **`include/platform/`** - Platform-specific headers and definitions
+
 
 ---
 
@@ -38,18 +38,12 @@
 
 ### Key File Locations
 - **Headers:** ALL in `include/` hierarchy (never in `src/`)
-- **Platform types:** `include/platform/platform.h` (mandatory first include)
+- **Amiga sdk headers:** `C:\Amiga\SDK\Include_H` (vbcc will need to compile with these standard amiga headers for workbench)
 - **Build outputs:** `build/amiga/` vs `build/host/` (never mix)
 
 ---
 
-## Critical Integration Patterns
 
-### Platform Abstraction Rules  
-- **File I/O:** Use platform wrappers - never direct stdio
-- **Memory:** Use platform memory allocation wrappers
-- **Directory ops:** Use platform directory scanning functions
-- **CLI isolation:** Amiga-specific code uses `#if PLATFORM_AMIGA`
 
 ---
 
@@ -64,15 +58,6 @@
 
 ---
 
-## Platform Header (mandatory include)
-
-Every source file must include:
-
-```c
-#include <platform.h>
-```
-
----
 
 ## Build Directory Structure
 

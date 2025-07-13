@@ -1,0 +1,10 @@
+[02:06:35] === CLI Wrapper Session Started ===
+[02:06:35] Platform: Host (stubbed)
+[02:06:35] === CLI_LIST START ===
+[02:06:35] Command: lha l assets/A10TankKiller_v2.0_3Disk.lha
+[02:06:35] EXECUTE_HOST: Command stubbed (not implemented): lha l assets/A10TankKiller_v2.0_3Disk.lha
+[02:06:35] EXECUTE_HOST: Service not supported on host
+[02:06:35] TIMING: List operation took 0 ticks
+[02:06:35] RESULT: Files processed: 0, Total size: 0 bytes
+[02:06:35] FAILURE: cli_list failed - success=false, files=0
+[02:06:35] === CLI_LIST END ===
