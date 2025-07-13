@@ -1,23 +1,4 @@
-[02:06:35] === CLI Wrapper Session Started ===
-[02:06:35] Platform: Host (stubbed)
-[02:06:35] === CLI_LIST START ===
-[02:06:35] Command: lha l assets/A10TankKiller_v2.0_3Disk.lha
-[02:06:35] EXECUTE_HOST: Command stubbed (not implemented): lha l assets/A10TankKiller_v2.0_3Disk.lha
-[02:06:35] EXECUTE_HOST: Service not supported on host
-[02:06:35] TIMING: List operation took 0 ticks
-[02:06:35] RESULT: Files processed: 0, Total size: 0 bytes
-[02:06:35] FAILURE: cli_list failed - success=false, files=0
-[02:06:35] === CLI_LIST END ===
-[02:18:40] === CLI_EXTRACT START ===
-[02:18:40] Command: lha x -m -n assets/A10TankKiller_v2.0_3Disk.lha test/
-[02:18:40] Expected total: 0 bytes
-[02:18:40] EXECUTE_HOST: Command stubbed (not implemented): lha x -m -n assets/A10TankKiller_v2.0_3Disk.lha test/
-[02:18:40] EXECUTE_HOST: Service not supported on host
-[02:18:40] TIMING: Extract operation took 0 ticks
-[02:18:40] RESULT: Files extracted: 0, Bytes processed: 0
-[02:18:40] FINAL_PERCENTAGE: 0.0%
-[02:18:40] PRIMARY_FAILURE: Attempting fallback directory check
-[02:18:40] FALLBACK_SUCCESS: Destination directory exists, assuming extraction succeeded
-[02:18:40] SUCCESS: cli_extract completed successfully
-[02:18:40] === CLI_EXTRACT END ===
-[02:18:40] === CLI Wrapper Session Ended ===
+[19:36:25] === CLI Wrapper Session Started ===
+[19:36:25] Platform: Host (stubbed)
+[19:36:25] ERROR: Host execution not implemented for command: lha l assets/A10TankKiller_v2.0_3Disk.lha
+[19:36:25] === CLI Wrapper Session Ended ===
