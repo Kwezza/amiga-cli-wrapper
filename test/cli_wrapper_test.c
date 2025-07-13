@@ -15,7 +15,7 @@ static void wait_for_input(void) {
     printf("===========================================\n");
     printf("Press ENTER to close this window...\n");
     fflush(stdout);
-    
+
 #ifdef PLATFORM_AMIGA
     char buffer[2];
     BPTR input = Input();
@@ -40,10 +40,10 @@ int main(void) {
     printf("Testing LHA archive operations on Amiga\n");
     printf("\n");
     fflush(stdout);
-    
+
     uint32_t total_size = 0;
     bool list_ok, extract_ok;
-    
+
     /* Step 1: Initialize */
     printf("Step 1: Initializing CLI wrapper...\n");
     if (!cli_wrapper_init()) {
@@ -54,16 +54,16 @@ int main(void) {
     printf("SUCCESS: CLI wrapper initialized\n");
     printf("\n");
     fflush(stdout);
-    
+
     /* Step 2: List archive contents */
     printf("Step 2: Listing archive contents...\n");
     printf("Archive: assets/A10TankKiller_v2.0_3Disk.lha\n");
     printf("Command: lha l\n");
     printf("Processing...\n");
     fflush(stdout);
-    
+
     list_ok = cli_list("lha l assets/A10TankKiller_v2.0_3Disk.lha", &total_size);
-    
+
     if (list_ok) {
         printf("SUCCESS: Archive listing completed\n");
         printf("- Files detected and processed\n");
@@ -79,7 +79,7 @@ int main(void) {
     }
     printf("\n");
     fflush(stdout);
-    
+
     /* Step 3: Extract archive */
     if (list_ok && total_size > 0) {
         printf("Step 3: Extracting archive...\n");
@@ -87,9 +87,9 @@ int main(void) {
         printf("Command: lha x -m -n\n");
         printf("Processing (this may take a moment)...\n");
         fflush(stdout);
-        
+
         extract_ok = cli_extract("lha x -m -n assets/A10TankKiller_v2.0_3Disk.lha test/", total_size);
-        
+
         if (extract_ok) {
             printf("SUCCESS: Archive extraction completed\n");
             printf("- All files extracted to test/ directory\n");
@@ -105,21 +105,21 @@ int main(void) {
     }
     printf("\n");
     fflush(stdout);
-    
+
     /* Step 4: Cleanup */
     printf("Step 4: Cleaning up...\n");
     cli_wrapper_cleanup();
     printf("SUCCESS: Cleanup completed\n");
     printf("\n");
     fflush(stdout);
-    
+
     /* Final Results */
     printf("=========================================\n");
     printf("FINAL TEST RESULTS\n");
     printf("=========================================\n");
     printf("Archive Listing:    %s\n", list_ok ? "PASS" : "FAIL");
     printf("Archive Extraction: %s\n", extract_ok ? "PASS" : "FAIL");
-    
+
     if (list_ok && extract_ok) {
         printf("\nOVERALL RESULT: SUCCESS!\n");
         printf("\nThe CLI wrapper is working correctly!\n");
@@ -139,9 +139,9 @@ int main(void) {
             printf("- Check archive file and LHA availability\n");
         }
     }
-    
+
     printf("\nCheck logfile.txt for detailed operation logs.\n");
-    
+
     wait_for_input();
     return (list_ok && extract_ok) ? 0 : 1;
 }
