@@ -32,6 +32,7 @@ static void wait_for_input(void) {
     getchar();
 #endif
 }
+size_t __stack = 65536;  /* request a 64 KB stack */
 
 int main(void) {
     printf("=========================================\n");

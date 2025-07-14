@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Configuration for LhA byte-based progress extraction */
+#ifndef LHA_UPDATE_INTERVAL_KB
+#define LHA_UPDATE_INTERVAL_KB 16  /* Update interval in KiB for -U switch */
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +41,24 @@ bool cli_list(const char *cmd, uint32_t *out_total);
  * @return false if extraction failed
  */
 bool cli_extract(const char *cmd, uint32_t total_expected);
+
+/**
+ * @brief Extract files from an LHA archive with byte-level progress tracking
+ *
+ * Uses LhA's -D0 (debug mode) and -U (update interval) options to track
+ * extraction progress at the byte level rather than file level. This provides
+ * smoother progress feedback on slower Amiga systems where per-file updates
+ * can cause performance issues.
+ *
+ * The command should include -m -D0 -U<interval> switches. The update interval
+ * is controlled by LHA_UPDATE_INTERVAL_KB (default 16 KiB).
+ *
+ * @param cmd Complete command string (e.g., "lha -m -D0 -U16 x archive.lha dest/")
+ * @param total_expected Total bytes expected to be extracted (from cli_list)
+ * @return true if extraction completed successfully
+ * @return false if extraction failed
+ */
+bool cli_extract_bytes(const char *cmd, uint32_t total_expected);
 
 /**
  * @brief Initialize CLI wrapper logging system

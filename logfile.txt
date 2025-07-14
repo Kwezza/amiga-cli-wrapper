@@ -1,4 +1,0 @@
-[19:36:25] === CLI Wrapper Session Started ===
-[19:36:25] Platform: Host (stubbed)
-[19:36:25] ERROR: Host execution not implemented for command: lha l assets/A10TankKiller_v2.0_3Disk.lha
-[19:36:25] === CLI Wrapper Session Ended ===

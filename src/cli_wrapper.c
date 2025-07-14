@@ -170,6 +170,8 @@ static bool parse_lha_list_line(const char *line, uint32_t *file_size)
 
 static bool parse_lha_extract_line(const char *line, uint32_t *file_size, char *filename, size_t filename_max)
 {
+    log_message("PARSE_EXTRACT: Parsing line: '%s'", line);
+
     /* Parse LHA extract output format:
      * " Extracting: (   10380)  A10TankKiller3Disk/data/A10[K"
      * We want the number in parentheses and the filename
@@ -181,26 +183,33 @@ static bool parse_lha_extract_line(const char *line, uint32_t *file_size, char *
     /* Look for " Extracting: (" pattern */
     const char *extract_pos = strstr(line, " Extracting: (");
     if (!extract_pos) {
+        log_message("PARSE_EXTRACT: No ' Extracting: (' pattern found");
         return false;
     }
+    log_message("PARSE_EXTRACT: Found extract pattern at offset %d", (int)(extract_pos - line));
 
     /* Move to the size number */
     const char *size_start = extract_pos + 14; /* Length of " Extracting: (" */
     while (*size_start == ' ') size_start++;
+    log_message("PARSE_EXTRACT: Size string starts at: '%.10s'", size_start);
 
     /* Parse the size */
     char *endptr;
     unsigned long size = strtoul(size_start, &endptr, 10);
+    log_message("PARSE_EXTRACT: Parsed size: %lu", size);
 
     /* Look for closing paren and filename */
     const char *paren_pos = strchr(size_start, ')');
     if (!paren_pos) {
+        log_message("PARSE_EXTRACT: No closing paren found");
         return false;
     }
+    log_message("PARSE_EXTRACT: Found closing paren");
 
     /* Find filename after the paren and spaces */
     const char *filename_start = paren_pos + 1;
     while (*filename_start == ' ' || *filename_start == '\t') filename_start++;
+    log_message("PARSE_EXTRACT: Filename starts at: '%.20s'", filename_start);
 
     /* Copy filename, stopping at control characters */
     size_t i;
@@ -211,8 +220,10 @@ static bool parse_lha_extract_line(const char *line, uint32_t *file_size, char *
         filename[i] = filename_start[i];
     }
     filename[i] = '\0';
+    log_message("PARSE_EXTRACT: Extracted filename: '%s'", filename);
 
     *file_size = (uint32_t)size;
+    log_message("PARSE_EXTRACT: Returning success - size: %u, filename: '%s'", *file_size, filename);
     return true;
 }
 
@@ -312,27 +323,45 @@ static bool check_directory_exists(const char *path)
 /* Line processor for list command */
 static bool list_line_processor(const char *line, void *user_data)
 {
+    log_message("LIST_PROCESSOR: Called with line: '%s'", line ? line : "(NULL)");
+
     list_context_t *ctx = (list_context_t *)user_data;
+    log_message("LIST_PROCESSOR: Context ptr: %p", (void*)ctx);
     uint32_t file_size;
 
+    log_message("LIST_PROCESSOR: About to parse line");
     if (parse_lha_list_line(line, &file_size)) {
+        log_message("LIST_PROCESSOR: Successfully parsed - size: %u", file_size);
         ctx->total_size += file_size;
         ctx->file_count++;
+        log_message("LIST_PROCESSOR: Updated counters - files: %u, total: %u",
+                   ctx->file_count, ctx->total_size);
+    } else {
+        log_message("LIST_PROCESSOR: Line not recognized as list format: '%s'", line);
     }
 
+    log_message("LIST_PROCESSOR: Returning true to continue processing");
     return true; /* Continue processing */
 }
 
 /* Line processor for extract command */
 static bool extract_line_processor(const char *line, void *user_data)
 {
+    log_message("EXTRACT_PROCESSOR: Called with line: '%s'", line ? line : "(NULL)");
+
     extract_context_t *ctx = (extract_context_t *)user_data;
+    log_message("EXTRACT_PROCESSOR: Context ptr: %p", (void*)ctx);
     uint32_t file_size;
     static char filename[64];  /* Static to avoid stack usage, smaller size */
 
+    log_message("EXTRACT_PROCESSOR: About to parse line");
     if (parse_lha_extract_line(line, &file_size, filename, sizeof(filename))) {
+        log_message("EXTRACT_PROCESSOR: Successfully parsed - file: '%s', size: %u", filename, file_size);
         ctx->cumulative_bytes += file_size;
         ctx->file_count++;
+
+        log_message("EXTRACT_PROCESSOR: Updated counters - files: %u, bytes: %u/%u",
+                   ctx->file_count, ctx->cumulative_bytes, ctx->total_expected);
 
         /* Calculate percentage using integer math (x10 for one decimal place) */
         uint32_t percentage_x10 = 0;
@@ -365,8 +394,12 @@ static bool extract_line_processor(const char *line, void *user_data)
                percentage_x10 % 10,
                current_jiffies);
         fflush(stdout);
+        log_message("EXTRACT_PROCESSOR: Displayed progress for file: %s", filename);
+    } else {
+        log_message("EXTRACT_PROCESSOR: Line not recognized as extract format: '%s'", line);
     }
 
+    log_message("EXTRACT_PROCESSOR: Returning true to continue processing");
     return true; /* Continue processing */
 }
 
@@ -396,6 +429,13 @@ static bool execute_command_amiga_streaming(const char *cmd,
         config = &default_config;
     }
 
+    /* Debug: Log the exact command being executed */
+    log_message("EXECUTE_AMIGA_STREAMING: Starting command execution");
+    log_message("EXECUTE_AMIGA_STREAMING: Command: %s", cmd);
+    log_message("EXECUTE_AMIGA_STREAMING: Tool: %s", config->tool_name);
+    log_message("EXECUTE_AMIGA_STREAMING: Pipe prefix: %s", config->pipe_prefix);
+    log_message("EXECUTE_AMIGA_STREAMING: Timeout: %d seconds", config->timeout_seconds);
+
     /* Generate unique pipe name using process ID and tool prefix */
     struct Task *current_task = FindTask(NULL);
     if (!current_task) {
@@ -405,13 +445,16 @@ static bool execute_command_amiga_streaming(const char *cmd,
 
     char pipe_name[64];
     sprintf(pipe_name, "PIPE:%s.%lu", config->pipe_prefix, (unsigned long)current_task);
+    log_message("EXECUTE_AMIGA_STREAMING: Generated pipe name: %s", pipe_name);
 
     /* 1. Open pipe first for writing */
     BPTR pipe = Open(pipe_name, MODE_NEWFILE);
     if (!pipe) {
         log_message("ERROR: failed to open pipe %s", pipe_name);
+        log_message("ERROR: IoErr() = %ld", IoErr());
         return false;
     }
+    log_message("EXECUTE_AMIGA_STREAMING: Pipe opened successfully for writing");
 
     /* Console output */
     if (!config->silent_mode) {
@@ -422,9 +465,11 @@ static bool execute_command_amiga_streaming(const char *cmd,
     /* Create command with pipe redirection for background execution */
     char full_cmd[512];
     snprintf(full_cmd, sizeof(full_cmd), "%s >%s", cmd, pipe_name);
+    log_message("EXECUTE_AMIGA_STREAMING: Full command with redirection: %s", full_cmd);
 
     /* Close the write pipe handle so the background command can open it */
     Close(pipe);
+    log_message("EXECUTE_AMIGA_STREAMING: Write pipe closed");
 
     /* Execute command asynchronously using SystemTags or fallback to System */
     struct TagItem tags[] = {
@@ -432,15 +477,24 @@ static bool execute_command_amiga_streaming(const char *cmd,
         { TAG_END, 0 }
     };
 
+    log_message("EXECUTE_AMIGA_STREAMING: Attempting SystemTagList execution");
     LONG proc_result = SystemTagList(full_cmd, tags);
+    log_message("EXECUTE_AMIGA_STREAMING: SystemTagList result: %ld", proc_result);
 
     if (proc_result == -1) {
         /* Fallback to regular System() if SystemTagList fails */
+        log_message("EXECUTE_AMIGA_STREAMING: SystemTagList failed, trying System()");
         proc_result = System(full_cmd, NULL);
+        log_message("EXECUTE_AMIGA_STREAMING: System() result: %ld", proc_result);
         if (proc_result == -1) {
             log_message("ERROR: failed to spawn %s process with both methods", config->tool_name);
             return false;
         }
+    }
+
+    /* Add extra verification that the process started */
+    if (proc_result != 0) {
+        log_message("WARNING: Command execution returned non-zero result: %ld", proc_result);
     }
 
     /* Give the asynchronous process time to start and open the pipe */
@@ -453,15 +507,19 @@ static bool execute_command_amiga_streaming(const char *cmd,
     }
 
     /* 3. Open pipe for reading immediately */
+    log_message("EXECUTE_AMIGA_STREAMING: About to open pipe for reading");
     BPTR read_pipe = Open(pipe_name, MODE_OLDFILE);
 
     if (!read_pipe) {
         log_message("ERROR: failed to open pipe %s for reading", pipe_name);
+        log_message("ERROR: IoErr() = %ld", IoErr());
         return false;
     }
+    log_message("EXECUTE_AMIGA_STREAMING: Pipe opened successfully for reading");
 
     /* Initialize timing */
     clock_t start_time = clock();
+    log_message("EXECUTE_AMIGA_STREAMING: Start time: %ld", (long)start_time);
 
     if (!config->silent_mode) {
         printf("Starting real-time %s monitoring...\n", config->tool_name);
@@ -477,23 +535,34 @@ static bool execute_command_amiga_streaming(const char *cmd,
     int empty_reads = 0;
     const int MAX_EMPTY_READS = config->timeout_seconds * 25; /* 25 checks per second */
 
+    log_message("EXECUTE_AMIGA_STREAMING: Starting pipe read loop, MAX_EMPTY_READS = %d", MAX_EMPTY_READS);
+
     while (empty_reads < MAX_EMPTY_READS) {
+        log_message("EXECUTE_AMIGA_STREAMING: Read attempt %d/%d", empty_reads + 1, MAX_EMPTY_READS);
         bytesRead = Read(read_pipe, buf, sizeof(buf) - 1);
+        log_message("EXECUTE_AMIGA_STREAMING: Read returned %ld bytes", (long)bytesRead);
 
         if (bytesRead > 0) {
             empty_reads = 0; /* Reset timeout counter */
+            log_message("EXECUTE_AMIGA_STREAMING: Got data, resetting empty_reads counter");
 
             /* Ensure buffer safety - paranoid safety checks */
             if (bytesRead >= sizeof(buf)) {
+                log_message("EXECUTE_AMIGA_STREAMING: Clamping bytesRead from %ld to %ld", (long)bytesRead, (long)(sizeof(buf) - 1));
                 bytesRead = sizeof(buf) - 1;
             }
 
             /* Additional safety - ensure we don't overrun buffer */
             if (bytesRead > 63) {
+                log_message("EXECUTE_AMIGA_STREAMING: Clamping bytesRead from %ld to 63", (long)bytesRead);
                 bytesRead = 63;
             }
 
             buf[bytesRead] = '\0';
+
+            /* Debug: Log raw data received */
+            log_message("EXECUTE_AMIGA_STREAMING: Read %ld bytes: [%s]", (long)bytesRead, buf);
+            log_message("STREAM_RESPONSE: [%s]", buf);  /* Log every stream response as requested */
 
             /* Get current timing for real-time feedback */
             clock_t current_time = clock();
@@ -501,16 +570,22 @@ static bool execute_command_amiga_streaming(const char *cmd,
 
             /* Process buffer character by character to handle partial lines */
             char *buffer_ptr = buf;
+            int chars_processed = 0;
             while (*buffer_ptr) {
                 char ch = *buffer_ptr++;
+                chars_processed++;
 
                 if (ch == '\n' || ch == '\r') {
                     /* Complete line found */
                     if (strlen(partial_line) > 0) {
                         line_count++;
 
+                        /* Debug: Log each complete line processed */
+                        log_message("EXECUTE_AMIGA_STREAMING: Processing line %d: [%s]", line_count, partial_line);
+
                         /* Process the line immediately for real-time tracking */
                         if (!line_processor(partial_line, user_data)) {
+                            log_message("EXECUTE_AMIGA_STREAMING: Line processor returned false, stopping");
                             goto cleanup;
                         }
 
@@ -518,46 +593,72 @@ static bool execute_command_amiga_streaming(const char *cmd,
                         partial_line[0] = '\0';
                     }
                 } else {
-                    /* Add character to partial line with extra safety */
+                    /* Add character to partial line with STRICT safety */
                     size_t len = strlen(partial_line);
-                    if (len < sizeof(partial_line) - 2) {  /* Extra safety margin */
+                    if (len < 120) {  /* Much stricter limit - leave 8 chars safety margin */
                         partial_line[len] = ch;
                         partial_line[len + 1] = '\0';
+                    } else {
+                        /* Buffer would overflow - force line completion */
+                        log_message("EXECUTE_AMIGA_STREAMING: Line buffer near full, forcing completion");
+                        if (strlen(partial_line) > 0) {
+                            line_count++;
+                            log_message("EXECUTE_AMIGA_STREAMING: Processing forced line %d: [%s]", line_count, partial_line);
+                            if (!line_processor(partial_line, user_data)) {
+                                log_message("EXECUTE_AMIGA_STREAMING: Line processor returned false, stopping");
+                                goto cleanup;
+                            }
+                            partial_line[0] = '\0';
+                        }
+                        /* Add current character to fresh buffer */
+                        partial_line[0] = ch;
+                        partial_line[1] = '\0';
                     }
                 }
             }
+            log_message("EXECUTE_AMIGA_STREAMING: Processed %d characters from buffer", chars_processed);
         } else if (bytesRead == 0) {
             /* EOF reached - but might be temporary, check a few times */
             empty_reads++;
+            log_message("EXECUTE_AMIGA_STREAMING: EOF reached, empty_reads = %d/%d", empty_reads, MAX_EMPTY_READS);
             if (empty_reads < MAX_EMPTY_READS) {
                 /* Use cooperative AmigaOS wait instead of busy-wait */
+                log_message("EXECUTE_AMIGA_STREAMING: Calling WaitForChar with 100000 timeout");
                 if (WaitForChar(read_pipe, 100000)) {
                     /* Data became available, reset counter and try again */
+                    log_message("EXECUTE_AMIGA_STREAMING: WaitForChar returned TRUE - data available");
                     empty_reads = 0;
                     continue;
                 } else {
                     /* Timeout occurred (~20ms), continue with empty_reads increment */
+                    log_message("EXECUTE_AMIGA_STREAMING: WaitForChar returned FALSE - timeout");
                     continue;
                 }
             } else {
+                log_message("EXECUTE_AMIGA_STREAMING: Max empty reads reached, breaking loop");
                 break;
             }
         } else {
             /* Read error */
             LONG error = IoErr();
             log_message("EXECUTE_AMIGA: Read error: %ld", error);
+            log_message("EXECUTE_AMIGA: Bytes read: %ld (negative indicates error)", (long)bytesRead);
             empty_reads++;
             if (empty_reads < MAX_EMPTY_READS) {
                 /* Use cooperative AmigaOS wait after read error */
+                log_message("EXECUTE_AMIGA_STREAMING: Calling WaitForChar after read error");
                 if (WaitForChar(read_pipe, 100000)) {
                     /* Data became available after error, reset counter */
+                    log_message("EXECUTE_AMIGA_STREAMING: WaitForChar returned TRUE after error");
                     empty_reads = 0;
                     continue;
                 } else {
                     /* Timeout occurred, continue with empty_reads increment */
+                    log_message("EXECUTE_AMIGA_STREAMING: WaitForChar returned FALSE after error");
                     continue;
                 }
             } else {
+                log_message("EXECUTE_AMIGA_STREAMING: Max empty reads reached after error, breaking loop");
                 break;
             }
         }
@@ -568,8 +669,11 @@ cleanup:
     /* Process any remaining partial line */
     if (strlen(partial_line) > 0) {
         line_count++;
+        log_message("EXECUTE_AMIGA_STREAMING: Processing final partial line: [%s]", partial_line);
         line_processor(partial_line, user_data);
     }
+
+    log_message("EXECUTE_AMIGA_STREAMING: Total lines processed: %d", line_count);
 
     /* Brief delay to allow process cleanup - much shorter than before */
     {
@@ -580,13 +684,19 @@ cleanup:
     }
 
     /* 6. Cleanup */
+    log_message("EXECUTE_AMIGA_STREAMING: About to close read pipe");
     Close(read_pipe);
+    log_message("EXECUTE_AMIGA_STREAMING: Read pipe closed successfully");
 
     if (!config->silent_mode) {
+        log_message("EXECUTE_AMIGA_STREAMING: About to print completion message");
         printf("Real-time streaming completed - processed %d lines\n", line_count);
         fflush(stdout);
+        log_message("EXECUTE_AMIGA_STREAMING: Completion message printed");
     }
 
+    log_message("EXECUTE_AMIGA_STREAMING: About to return success");
+    log_message("EXECUTE_AMIGA_STREAMING: Returning success=true, total lines processed: %d", line_count);
     return true;
 }
 
@@ -642,41 +752,85 @@ bool cli_list(const char *cmd, uint32_t *out_total)
     bool success = execute_command_host(cmd, list_line_processor, &ctx);
 #endif
 
+    log_message("CLI_LIST: After execute_command - success: %s, file_count: %u, total_size: %u",
+               success ? "true" : "false", ctx.file_count, ctx.total_size);
+
     if (success && ctx.file_count > 0) {
+        log_message("CLI_LIST: Operation completed successfully - files: %u, total: %u",
+                   ctx.file_count, ctx.total_size);
         *out_total = ctx.total_size;
         return true;
     } else {
+        log_message("CLI_LIST: Operation failed - success: %s, file_count: %u",
+                   success ? "true" : "false", ctx.file_count);
         return false;
     }
 }
 
 bool cli_extract(const char *cmd, uint32_t total_expected)
 {
+    log_message("CLI_EXTRACT: === FUNCTION ENTRY ===");
+    log_message("CLI_EXTRACT: Command: %s", cmd ? cmd : "NULL");
+    log_message("CLI_EXTRACT: Total expected: %lu", (unsigned long)total_expected);
+
     if (!cmd) {
         log_message("ERROR: cli_extract called with NULL command");
         return false;
     }
+    log_message("CLI_EXTRACT: Command parameter validated");
 
     if (!cli_wrapper_init()) {
         log_message("ERROR: cli_wrapper_init failed in cli_extract");
         return false;
     }
+    log_message("CLI_EXTRACT: CLI wrapper initialized successfully");
+
+    /* CRITICAL: Ensure destination directory exists by creating temp_extract/ */
+    log_message("CLI_EXTRACT: Creating destination directory temp_extract/");
+#ifdef PLATFORM_AMIGA
+    BPTR dir_lock = CreateDir("temp_extract");
+    if (dir_lock) {
+        log_message("CLI_EXTRACT: Created temp_extract/ directory successfully");
+        UnLock(dir_lock);
+    } else {
+        LONG error = IoErr();
+        if (error == ERROR_OBJECT_EXISTS) {
+            log_message("CLI_EXTRACT: temp_extract/ directory already exists - good");
+        } else {
+            log_message("WARNING: Failed to create temp_extract/ directory, IoErr() = %ld", error);
+        }
+    }
+#else
+    /* Host platform - would create directory */
+    log_message("CLI_EXTRACT: Host platform - would create temp_extract/ directory");
+#endif
 
     /* Console output - inform user that extraction is starting */
+    log_message("CLI_EXTRACT: About to print startup messages");
     printf("Starting extraction with real-time progress...\n");
+    log_message("CLI_EXTRACT: Printed first message");
     printf("Command: %s\n", cmd);
+    log_message("CLI_EXTRACT: Printed command");
     if (total_expected > 0) {
         printf("Expected size: %lu bytes\n", (unsigned long)total_expected);
+        log_message("CLI_EXTRACT: Printed expected size");
     }
     printf("NOTE: Progress will be displayed as files are extracted\n");
     fflush(stdout);
+    log_message("CLI_EXTRACT: All startup messages printed");
 
     /* Initialize context with safety checks */
+    log_message("CLI_EXTRACT: About to initialize context structure");
     extract_context_t ctx;
+    log_message("CLI_EXTRACT: Context structure allocated");
     ctx.total_expected = total_expected;
+    log_message("CLI_EXTRACT: Set total_expected = %lu", (unsigned long)total_expected);
     ctx.cumulative_bytes = 0;
+    log_message("CLI_EXTRACT: Set cumulative_bytes = 0");
     ctx.file_count = 0;
+    log_message("CLI_EXTRACT: Set file_count = 0");
     ctx.last_percentage_x10 = 0;
+    log_message("CLI_EXTRACT: Set last_percentage_x10 = 0");
 
 #ifdef PLATFORM_AMIGA
     /* Use clock() for timing on Amiga for simplicity */
@@ -688,16 +842,25 @@ bool cli_extract(const char *cmd, uint32_t total_expected)
 
 #ifdef PLATFORM_AMIGA
     /* Use the new streaming configuration for safer execution */
+    log_message("CLI_EXTRACT: About to configure Amiga execution");
     amiga_exec_config_t extract_config = {
         .tool_name = "LhA",
         .pipe_prefix = "lha_pipe",
         .timeout_seconds = 15,  /* Even shorter timeout */
         .silent_mode = false
     };
+    log_message("CLI_EXTRACT: About to call execute_command_amiga_streaming");
+    log_message("CLI_EXTRACT: Context ptr: %p", (void*)&ctx);
+    log_message("CLI_EXTRACT: Config ptr: %p", (void*)&extract_config);
+    log_message("CLI_EXTRACT: Command string: [%s]", cmd);
+    log_message("CLI_EXTRACT: Line processor function ptr: %p", (void*)extract_line_processor);
 
     bool success = execute_command_amiga_streaming(cmd, extract_line_processor, &ctx, &extract_config);
+    log_message("CLI_EXTRACT: execute_command_amiga_streaming returned: %s", success ? "true" : "false");
 #else
+    log_message("CLI_EXTRACT: About to call execute_command_host");
     bool success = execute_command_host(cmd, extract_line_processor, &ctx);
+    log_message("CLI_EXTRACT: execute_command_host returned: %s", success ? "true" : "false");
 #endif
 
 #ifdef PLATFORM_AMIGA

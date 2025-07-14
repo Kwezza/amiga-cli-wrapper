@@ -9,6 +9,27 @@ A collection of command-line wrapper utilities for Amiga development with dual-t
 - Platform abstraction layer for seamless cross-compilation
 - ANSI C compatibility for classic Amiga hardware
 - Minimal dependencies and resource usage
+- **NEW: Byte-level progress tracking for smooth extraction on slower Amiga systems**
+
+## Archive Extraction Modes
+
+This wrapper provides two extraction modes optimized for different Amiga systems:
+
+### File-Level Progress (Standard)
+- **Function**: `cli_extract()`
+- **Best for**: Fast Amiga systems (68020+, 8MB+ RAM)
+- **Display**: Shows progress per file extracted
+- **Command**: `lha x -m -n archive.lha dest/`
+
+### Byte-Level Progress (Optimized for slower systems)
+- **Function**: `cli_extract_bytes()`
+- **Best for**: Slower Amiga systems (68000, 2-4MB RAM)
+- **Display**: Shows smooth progress based on bytes extracted
+- **Command**: `lha -m -D0 -U16 x archive.lha dest/`
+- **Configurable**: Update interval controlled by `LHA_UPDATE_INTERVAL_KB` (default: 16 KiB)
+
+The byte-level mode reduces display updates and provides smoother progress feedback,
+preventing system slowdowns during large file extractions on classic hardware.
 
 ## System Requirements
 
@@ -41,6 +62,53 @@ make TARGET=host
 ```bash
 make all
 ```
+
+## Usage Examples
+
+### Basic Archive Operations
+
+```c
+#include "cli_wrapper.h"
+
+int main(void) {
+    uint32_t total_size;
+
+    // Initialize the wrapper
+    cli_wrapper_init();
+
+    // List archive contents
+    if (cli_list("lha l archive.lha", &total_size)) {
+        printf("Archive size: %lu bytes\n", total_size);
+
+        // Standard extraction (fast systems)
+        cli_extract("lha x -m -n archive.lha dest/", total_size);
+
+        // OR byte-level extraction (slower systems)
+        cli_extract_bytes("lha -m -D0 -U16 x archive.lha dest/", total_size);
+    }
+
+    cli_wrapper_cleanup();
+    return 0;
+}
+```
+
+### Configuration for Slower Systems
+
+For 7 MHz Amiga systems, adjust the update interval:
+
+```c
+// In cli_wrapper.h or your build system:
+#define LHA_UPDATE_INTERVAL_KB 32  // Update every 32 KiB (slower updates)
+
+// Command will be: lha -m -D0 -U32 x archive.lha dest/
+```
+
+### Test Programs
+
+Two test programs are provided:
+
+- `cli_wrapper_test` - Standard file-level extraction test
+- `cli_bytes_test` - Byte-level extraction test (recommended for slower systems)
 
 ## Dual-Target Platform Support
 
