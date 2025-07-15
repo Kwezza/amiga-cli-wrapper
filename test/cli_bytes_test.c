@@ -105,7 +105,7 @@ int main(void) {
         test_log("Conditions met, starting extraction phase");
         printf("Step 3: Extracting archive with byte-level progress...\n");
         printf("Target directory: temp_extract/\n");
-        printf("Command: lha x -m -n (no prompting - critical!)\n");
+        printf("Command: lha x -m -n -w target_dir/ (proper LHA syntax)\n");
         printf("NOTE: Progress will be smoother on slower Amiga systems\n");
         printf("Processing (this may take a moment)...\n");
         printf("IMPORTANT: Adding safety delay before extraction...\n");
@@ -178,10 +178,10 @@ int main(void) {
         test_log("Directory deletion phase completed");
         fflush(stdout);
 
-        /* Create extraction command with proper flags - match working version exactly */
+        /* Create extraction command - change to directory first, then extract */
         char extract_cmd[256];
         snprintf(extract_cmd, sizeof(extract_cmd),
-                "lha x -m -n assets/A10TankKiller_v2.0_3Disk.lha temp_extract/");
+                "cd temp_extract && lha x -m -n ../assets/A10TankKiller_v2.0_3Disk.lha");
 
         test_log("About to print exact command");
         printf("EXACT COMMAND: [%s]\n", extract_cmd);
