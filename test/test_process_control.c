@@ -18,7 +18,7 @@
 /* Test configuration */
 #define TEST_ARCHIVE "assets/A10TankKiller_v2.0_3Disk.lha"
 #define TEST_DEST_DIR "temp_extract/"
-#define TEST_CORRUPTED_ARCHIVE "temp_corrupted.lha"
+#define TEST_CORRUPTED_ARCHIVE "assets/test_archive_corrupted.lha"
 
 /* Test result tracking */
 static int tests_run = 0;
@@ -44,6 +44,8 @@ static bool test_process_control_init(void);
 static bool test_basic_process_spawning(void);
 static bool test_lha_list_parsing(void);
 static bool test_lha_extract_with_progress(void);
+static bool test_lha_archive_integrity_good(void);
+static bool test_lha_archive_integrity_corrupted(void);
 static bool test_process_death_monitoring(void);
 static bool test_corruption_detection(void);
 
@@ -52,6 +54,9 @@ static bool test_line_processor(const char *line, void *user_data);
 
 /* Enhanced test line processor for extract with progress */
 static bool test_extract_line_processor(const char *line, void *user_data);
+
+/* Test line processor for LHA test integrity checking */
+static bool test_integrity_line_processor(const char *line, void *user_data);
 
 /* Helper function to parse LHA extract lines */
 static bool parse_test_extract_line(const char *line, char *filename, size_t filename_max);
@@ -86,6 +91,8 @@ int main(void)
     run_test("Basic Process Spawning", test_basic_process_spawning);
     run_test("LHA List Parsing", test_lha_list_parsing);
     run_test("LHA Extract with Progress", test_lha_extract_with_progress);
+    run_test("LHA Archive Integrity (Good)", test_lha_archive_integrity_good);
+    run_test("LHA Archive Integrity (Corrupted)", test_lha_archive_integrity_corrupted);
     run_test("Process Death Monitoring", test_process_death_monitoring);
     run_test("Corruption Detection", test_corruption_detection);
 
@@ -557,6 +564,208 @@ static void strip_test_escape_codes(const char *input, char *output, size_t outp
     }
 
     output[out_pos] = '\0';
+}
+
+/* Archive integrity test context */
+typedef struct {
+    uint32_t files_tested;
+    uint32_t errors_found;
+    bool integrity_ok;
+    char last_error[256];
+} integrity_test_context_t;
+
+static bool test_lha_archive_integrity_good(void)
+{
+    test_log("Testing LHA archive integrity (good archive)");
+
+    /* Test the good archive */
+    char test_cmd[512];
+    snprintf(test_cmd, sizeof(test_cmd), "lha -n t %s", TEST_ARCHIVE);
+
+    test_log("LHA integrity test command: %s", test_cmd);
+    printf("   Testing archive integrity: %s\n", TEST_ARCHIVE);
+
+    /* Set up integrity test context */
+    integrity_test_context_t integrity_ctx = {
+        .files_tested = 0,
+        .errors_found = 0,
+        .integrity_ok = true,
+        .last_error = {0}
+    };
+
+    /* Configure process execution */
+    process_exec_config_t config = {
+        .tool_name = "LhA",
+        .pipe_prefix = "lha_test_good",
+        .timeout_seconds = 30,
+        .silent_mode = false
+    };
+
+    /* Execute controlled process with integrity line processor */
+    controlled_process_t process;
+    bool result = execute_controlled_process(test_cmd, test_integrity_line_processor, &integrity_ctx, &config, &process);
+
+    test_log("LHA integrity test result: %s", result ? "success" : "failure");
+    test_log("Files tested: %lu", (unsigned long)integrity_ctx.files_tested);
+    test_log("Errors found: %lu", (unsigned long)integrity_ctx.errors_found);
+
+    /* Check exit code */
+    int32_t exit_code = -1;
+    if (get_process_exit_code(&process, &exit_code)) {
+        test_log("LHA integrity test exit code: %ld", (long)exit_code);
+        printf("   Process exit code: %ld", (long)exit_code);
+        
+        if (exit_code == 0) {
+            printf(" (Archive is OK)\n");
+        } else {
+            printf(" (Archive has errors)\n");
+        }
+    } else {
+        test_log("Could not retrieve exit code");
+        printf("   Exit code not available\n");
+    }
+
+    /* Display results */
+    printf("   Files tested: %lu\n", (unsigned long)integrity_ctx.files_tested);
+    printf("   Errors found: %lu\n", (unsigned long)integrity_ctx.errors_found);
+    
+    if (integrity_ctx.errors_found == 0 && exit_code == 0) {
+        printf("   Archive integrity: PASSED\n");
+        test_log("Good archive integrity test successful");
+    } else {
+        printf("   Archive integrity: FAILED\n");
+        test_log("Good archive integrity test failed");
+        if (strlen(integrity_ctx.last_error) > 0) {
+            test_log("Last error: %s", integrity_ctx.last_error);
+        }
+    }
+
+    /* Clean up process resources */
+    cleanup_controlled_process(&process);
+
+    return (result && integrity_ctx.errors_found == 0 && exit_code == 0);
+}
+
+static bool test_lha_archive_integrity_corrupted(void)
+{
+    test_log("Testing LHA archive integrity (corrupted archive)");
+
+    /* Test the corrupted archive */
+    char test_cmd[512];
+    snprintf(test_cmd, sizeof(test_cmd), "lha -n t %s", TEST_CORRUPTED_ARCHIVE);
+
+    test_log("LHA integrity test command: %s", test_cmd);
+    printf("   Testing archive integrity: %s\n", TEST_CORRUPTED_ARCHIVE);
+
+    /* Set up integrity test context */
+    integrity_test_context_t integrity_ctx = {
+        .files_tested = 0,
+        .errors_found = 0,
+        .integrity_ok = true,
+        .last_error = {0}
+    };
+
+    /* Configure process execution */
+    process_exec_config_t config = {
+        .tool_name = "LhA",
+        .pipe_prefix = "lha_test_corrupted",
+        .timeout_seconds = 30,
+        .silent_mode = false
+    };
+
+    /* Execute controlled process with integrity line processor */
+    controlled_process_t process;
+    bool result = execute_controlled_process(test_cmd, test_integrity_line_processor, &integrity_ctx, &config, &process);
+
+    test_log("LHA integrity test result: %s", result ? "success" : "failure");
+    test_log("Files tested: %lu", (unsigned long)integrity_ctx.files_tested);
+    test_log("Errors found: %lu", (unsigned long)integrity_ctx.errors_found);
+
+    /* Check exit code */
+    int32_t exit_code = -1;
+    if (get_process_exit_code(&process, &exit_code)) {
+        test_log("LHA integrity test exit code: %ld", (long)exit_code);
+        printf("   Process exit code: %ld", (long)exit_code);
+        
+        if (exit_code == 0) {
+            printf(" (Archive is OK)\n");
+        } else {
+            printf(" (Archive has errors)\n");
+        }
+    } else {
+        test_log("Could not retrieve exit code");
+        printf("   Exit code not available\n");
+    }
+
+    /* Display results */
+    printf("   Files tested: %lu\n", (unsigned long)integrity_ctx.files_tested);
+    printf("   Errors found: %lu\n", (unsigned long)integrity_ctx.errors_found);
+    
+    if (integrity_ctx.errors_found > 0 || exit_code != 0) {
+        printf("   Archive integrity: FAILED (Archive is damaged)\n");
+        test_log("Corrupted archive integrity test successful (detected corruption)");
+        if (strlen(integrity_ctx.last_error) > 0) {
+            test_log("Last error: %s", integrity_ctx.last_error);
+            printf("   Last error: %s\n", integrity_ctx.last_error);
+        }
+    } else {
+        printf("   Archive integrity: PASSED (Unexpected - should be corrupted)\n");
+        test_log("Corrupted archive integrity test failed (did not detect corruption)");
+    }
+
+    /* Clean up process resources */
+    cleanup_controlled_process(&process);
+
+    /* For corrupted archive, we expect errors - so test passes if we found errors */
+    return (result && (integrity_ctx.errors_found > 0 || exit_code != 0));
+}
+
+static bool test_integrity_line_processor(const char *line, void *user_data)
+{
+    integrity_test_context_t *ctx = (integrity_test_context_t *)user_data;
+    
+    if (!line || !ctx) {
+        return false;
+    }
+
+    /* Strip escape codes from line */
+    char clean_line[256];
+    strip_test_escape_codes(line, clean_line, sizeof(clean_line));
+
+    test_log("Processing integrity line: %s", clean_line);
+
+    /* Check for testing indicators */
+    if (strstr(clean_line, "Testing:")) {
+        ctx->files_tested++;
+        test_log("Testing file count: %lu", (unsigned long)ctx->files_tested);
+        return true;
+    }
+
+    /* Check for various error indicators */
+    if (strstr(clean_line, "*** Error") || 
+        strstr(clean_line, "Failed CRC Check") ||
+        strstr(clean_line, "Bad decoding table") ||
+        strstr(clean_line, "WARNING: Skipping corrupt")) {
+        
+        ctx->errors_found++;
+        ctx->integrity_ok = false;
+        
+        /* Store the last error message */
+        size_t len = strlen(clean_line);
+        if (len >= sizeof(ctx->last_error)) {
+            len = sizeof(ctx->last_error) - 1;
+        }
+        size_t i;
+        for (i = 0; i < len; i++) {
+            ctx->last_error[i] = clean_line[i];
+        }
+        ctx->last_error[len] = '\0';
+        
+        test_log("Error detected [%lu]: %s", (unsigned long)ctx->errors_found, clean_line);
+        return true;
+    }
+
+    return true;
 }
 
 static bool test_corruption_detection(void)

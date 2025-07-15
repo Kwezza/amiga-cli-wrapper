@@ -79,9 +79,11 @@ $(CLI_WRAPPER_TEST): $(CLI_WRAPPER_SOURCES) $(TEST_SOURCES) | $(BUILD_TARGET_DIR
 ifeq ($(OS),Windows_NT)
 	@if not exist "$(subst /,\,$(BUILD_TARGET_DIR))\assets" mkdir "$(subst /,\,$(BUILD_TARGET_DIR))\assets"
 	@copy "assets\A10TankKiller_v2.0_3Disk.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy test archive"
+	@copy "assets\test_archive_corrupted.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy corrupted test archive"
 else
 	@mkdir -p $(BUILD_TARGET_DIR)/assets
 	@cp assets/A10TankKiller_v2.0_3Disk.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy test archive"
+	@cp assets/test_archive_corrupted.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy corrupted test archive"
 endif
 
 # Build the byte-level test executable
@@ -98,9 +100,11 @@ $(CLI_BYTES_TEST): $(CLI_WRAPPER_SOURCES) $(BYTES_TEST_SOURCES) | $(BUILD_TARGET
 ifeq ($(OS),Windows_NT)
 	@if not exist "$(subst /,\,$(BUILD_TARGET_DIR))\assets" mkdir "$(subst /,\,$(BUILD_TARGET_DIR))\assets"
 	@copy "assets\A10TankKiller_v2.0_3Disk.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy test archive"
+	@copy "assets\test_archive_corrupted.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy corrupted test archive"
 else
 	@mkdir -p $(BUILD_TARGET_DIR)/assets
 	@cp assets/A10TankKiller_v2.0_3Disk.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy test archive"
+	@cp assets/test_archive_corrupted.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy corrupted test archive"
 endif
 
 # Build the process control test executable
@@ -117,9 +121,11 @@ $(PROCESS_CONTROL_TEST): $(CLI_WRAPPER_SOURCES) $(PROCESS_CONTROL_TEST_SOURCES) 
 ifeq ($(OS),Windows_NT)
 	@if not exist "$(subst /,\,$(BUILD_TARGET_DIR))\assets" mkdir "$(subst /,\,$(BUILD_TARGET_DIR))\assets"
 	@copy "assets\A10TankKiller_v2.0_3Disk.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy test archive"
+	@copy "assets\test_archive_corrupted.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy corrupted test archive"
 else
 	@mkdir -p $(BUILD_TARGET_DIR)/assets
 	@cp assets/A10TankKiller_v2.0_3Disk.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy test archive"
+	@cp assets/test_archive_corrupted.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy corrupted test archive"
 endif
 
 # Build the file corruptor utility (host only)

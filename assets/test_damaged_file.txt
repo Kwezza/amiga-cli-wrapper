@@ -1,0 +1,48 @@
+LhA V1.10 - Copyright © 1991,92 Stefan Boberg. Not for commercial use.
+
+[0 pTesting integrity of archive 'test_archive_corrupted.lha':[K
+    Testing: (     900)  A10TankKiller3Disk.info[K
+[0m    Testing: (    8098)  A10TankKiller3Disk/A10TankKiller3Disk.info[K[0m*** Error on file 'A10TankKiller3Disk.info' : Failed CRC Check[K
+     WARNING: Skipping corrupt/extraneous data[K
+    Testing: (    3656)  A10TankKiller3Disk/A10TankKiller3Disk.Slave[K
+[0m    Testing: (   10380)  A10TankKiller3Disk/data/A10[K[0m*** Error on file 'A10' : Failed CRC Check[K
+     WARNING: Skipping corrupt/extraneous data[K
+    Testing: (   82756)  A10TankKiller3Disk/data/A10.sfx[K[0m*** Error on file 'A10.sfx' : Bad decoding table[K
+     WARNING: Skipping corrupt/extraneous data[K
+    Testing: (    5562)  A10TankKiller3Disk/data/A10_20.icon[K
+[0m    Testing: (    8008)  A10TankKiller3Disk/data/AmigaSnd.drv[K
+[0m    Testing: (    1964)  A10TankKiller3Disk/data/c/avail[K
+[0m    Testing: (   11284)  A10TankKiller3Disk/data/c/More[K
+[0m    Testing: (    2568)  A10TankKiller3Disk/data/c/run[K
+[0m    Testing: (  233380)  A10TankKiller3Disk/data/Cmp1.001[K
+[0m    Testing: (     229)  A10TankKiller3Disk/data/Cmp1.RMF[K
+[0m    Testing: (  223108)  A10TankKiller3Disk/data/Cmp2.001[K
+[0m    Testing: (     229)  A10TankKiller3Disk/data/Cmp2.RMF[K
+[0m    Testing: (  144919)  A10TankKiller3Disk/data/Cmp3.001[K
+[0m    Testing: (     189)  A10TankKiller3Disk/data/Cmp3.RMF[K
+[0m    Testing: (      16)  A10TankKiller3Disk/data/control.prf[K
+[0m    Testing: (     232)  A10TankKiller3Disk/data/devs/system-configuration[K
+[0m    Testing: (     900)  A10TankKiller3Disk/data/Drawer.icon[K
+[0m    Testing: (     628)  A10TankKiller3Disk/data/Drawer20.icon[K
+[0m    Testing: (   30548)  A10TankKiller3Disk/data/Install[K
+[0m    Testing: (      92)  A10TankKiller3Disk/data/MName1.Dat[K
+[0m    Testing: (      95)  A10TankKiller3Disk/data/MName2.Dat[K
+[0m    Testing: (      92)  A10TankKiller3Disk/data/MName3.Dat[K
+[0m    Testing: (  167496)  A10TankKiller3Disk/data/PS[K
+[0m    Testing: (    1657)  A10TankKiller3Disk/data/ReadMe[K
+[0m    Testing: (  235808)  A10TankKiller3Disk/data/Sim[K
+[0m    Testing: (       5)  A10TankKiller3Disk/data/Vol1.Map[K
+[0m    Testing: (       5)  A10TankKiller3Disk/data/Vol2.Map[K
+[0m    Testing: (       5)  A10TankKiller3Disk/data/Vol3.Map[K
+[0m    Testing: (  396448)  A10TankKiller3Disk/data/Volume.001[K
+[0m    Testing: (  517925)  A10TankKiller3Disk/data/Volume.002[K
+[0m    Testing: (  199451)  A10TankKiller3Disk/data/Volume.003[K
+[0m    Testing: (     891)  A10TankKiller3Disk/data/Volume.RMF[K
+[0m    Testing: (   47664)  A10TankKiller3Disk/Manual[K
+[0m    Testing: (    1396)  A10TankKiller3Disk/Manual.info[K
+[0m    Testing: (    2018)  A10TankKiller3Disk/ReadMe[K
+[0m    Testing: (    1396)  A10TankKiller3Disk/ReadMe.info[K
+[0m38 files tested, 3 files failed.[K
+
+Operation not entirely successful.
+[K[1 p[0m
