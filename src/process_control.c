@@ -16,12 +16,23 @@
 #include <utility/tagitem.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
+
+/* Define additional signal constants not in all headers */
+#ifndef SIGBREAKF_CTRL_S
+#define SIGBREAKF_CTRL_S    (1L<<19)  /* Pause signal (Ctrl+S) */
+#endif
+#ifndef SIGBREAKF_CTRL_Q
+#define SIGBREAKF_CTRL_Q    (1L<<17)  /* Resume signal (Ctrl+Q) */
+#endif
+
 #else
 /* Define Amiga signal constants for compilation */
 #define SIGBREAKF_CTRL_C    (1L<<12)
 #define SIGBREAKF_CTRL_D    (1L<<13)
 #define SIGBREAKF_CTRL_E    (1L<<14)
 #define SIGBREAKF_CTRL_F    (1L<<15)
+#define SIGBREAKF_CTRL_S    (1L<<19)  /* Pause signal */
+#define SIGBREAKF_CTRL_Q    (1L<<17)  /* Resume signal */
 #define BNULL               0L
 #define TRUE                1
 #define FALSE               0
@@ -199,8 +210,8 @@ bool send_pause_signal(controlled_process_t *process)
     process_log_message("Pause signal requested for process: %s", process->process_name);
 
     if (process->child_process) {
-        /* Send SIGBREAKF_CTRL_C signal to pause process */
-        Signal((struct Task *)process->child_process, SIGBREAKF_CTRL_C);
+        /* Send SIGBREAKF_CTRL_S signal to pause process */
+        Signal((struct Task *)process->child_process, SIGBREAKF_CTRL_S);
         process_log_message("Pause signal sent to process");
         return true;
     }
@@ -218,8 +229,8 @@ bool send_resume_signal(controlled_process_t *process)
     process_log_message("Resume signal requested for process: %s", process->process_name);
 
     if (process->child_process) {
-        /* Send SIGBREAKF_CTRL_D signal to resume process */
-        Signal((struct Task *)process->child_process, SIGBREAKF_CTRL_D);
+        /* Send SIGBREAKF_CTRL_Q signal to resume process */
+        Signal((struct Task *)process->child_process, SIGBREAKF_CTRL_Q);
         process_log_message("Resume signal sent to process");
         return true;
     }
@@ -237,8 +248,8 @@ bool send_terminate_signal(controlled_process_t *process)
     process_log_message("Terminate signal requested for process: %s", process->process_name);
 
     if (process->child_process) {
-        /* Send SIGBREAKF_CTRL_E signal to terminate process */
-        Signal((struct Task *)process->child_process, SIGBREAKF_CTRL_E);
+        /* Send SIGBREAKF_CTRL_C signal to terminate process */
+        Signal((struct Task *)process->child_process, SIGBREAKF_CTRL_C);
         process_log_message("Terminate signal sent to process");
         return true;
     }
@@ -414,6 +425,14 @@ static bool spawn_amiga_process(const char *cmd, const char *pipe_name, controll
     process->exit_code = 0;
     process->exit_code_valid = false;
     
+#ifdef PLATFORM_AMIGA
+    /* Try a different approach - use RunCommand instead of SystemTagList */
+    /* This might give us better process control */
+    
+    /* Get current process for reference */
+    struct Process *current_process = (struct Process *)FindTask(NULL);
+    process_log_message("Current process: %p", current_process);
+    
     /* Create process tags for SystemTagList */
     struct TagItem tags[] = {
         {SYS_Input, 0},
@@ -431,6 +450,60 @@ static bool spawn_amiga_process(const char *cmd, const char *pipe_name, controll
         process->exit_code_valid = true;
         return false;
     }
+    
+    /* Wait a bit longer for process to start */
+    volatile int delay_counter;
+    for (delay_counter = 0; delay_counter < 500000; delay_counter++) {
+        /* 1 second delay to let process start */
+    }
+    
+    process_log_message("Attempting to find LHA child process...");
+    
+    /* Try different possible task names with more attempts */
+    const char *possible_names[] = {"lha", "LhA", "LHA", "Lha", "CLI", "Background CLI", NULL};
+    int name_index = 0;
+    int attempts = 0;
+    
+    while (possible_names[name_index] && !process->child_process && attempts < 10) {
+        process_log_message("Attempt %d: Trying to find task: %s", attempts + 1, possible_names[name_index]);
+        process->child_process = (struct Process *)FindTask(possible_names[name_index]);
+        
+        if (!process->child_process) {
+            name_index++;
+            if (!possible_names[name_index]) {
+                name_index = 0;  /* Start over */
+                attempts++;
+                
+                /* Small delay between attempts */
+                volatile int small_delay;
+                for (small_delay = 0; small_delay < 100000; small_delay++) {
+                    /* 200ms delay */
+                }
+            }
+        }
+    }
+    
+    if (process->child_process) {
+        process_log_message("Child process found: %p (name: %s, attempts: %d)", 
+                           process->child_process, possible_names[name_index], attempts + 1);
+    } else {
+        process_log_message("Warning: Could not find child process by any name after %d attempts", attempts);
+        
+        /* Try one more time with NULL (current task) as a test */
+        struct Task *current = FindTask(NULL);
+        process_log_message("Current task for reference: %p", current);
+        
+        /* As a fallback, try to find ANY task that's not the current one */
+        /* This is a bit of a hack but might work for testing */
+        struct Task *first_task = (struct Task *)((struct ExecBase *)SysBase)->TaskReady.lh_Head;
+        process_log_message("First task in ready queue: %p", first_task);
+        
+        if (first_task && first_task != current) {
+            process_log_message("Using first non-current task as fallback: %p", first_task);
+            process->child_process = (struct Process *)first_task;
+        }
+    }
+#endif
     
     process->process_running = true;
     process->death_signal = SIGBREAKF_CTRL_F;  /* Use CTRL+F as death signal */

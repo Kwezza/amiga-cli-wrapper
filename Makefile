@@ -15,6 +15,7 @@ CLI_WRAPPER_SOURCES = $(SRC_DIR)/cli_wrapper.c $(SRC_DIR)/process_control.c $(SR
 TEST_SOURCES = $(TEST_DIR)/cli_wrapper_test.c
 BYTES_TEST_SOURCES = $(TEST_DIR)/cli_bytes_test.c
 PROCESS_CONTROL_TEST_SOURCES = $(TEST_DIR)/test_process_control.c
+PAUSE_RESUME_TEST_SOURCES = $(TEST_DIR)/pause_resume_test.c
 FILE_CORRUPTOR_SOURCES = $(SRC_DIR)/file_corruptor.c
 FILE_CORRUPTOR_TEST_SOURCES = $(TEST_DIR)/file_corruptor_test.c
 
@@ -45,15 +46,16 @@ endif
 CLI_WRAPPER_TEST = $(BUILD_TARGET_DIR)/cli_wrapper_test$(EXECUTABLE_EXT)
 CLI_BYTES_TEST = $(BUILD_TARGET_DIR)/cli_bytes_test$(EXECUTABLE_EXT)
 PROCESS_CONTROL_TEST = $(BUILD_TARGET_DIR)/test_process_control$(EXECUTABLE_EXT)
+PAUSE_RESUME_TEST = $(BUILD_TARGET_DIR)/pause_resume_test$(EXECUTABLE_EXT)
 FILE_CORRUPTOR = $(BUILD_TARGET_DIR)/file_corruptor$(EXECUTABLE_EXT)
 FILE_CORRUPTOR_TEST = $(BUILD_TARGET_DIR)/file_corruptor_test$(EXECUTABLE_EXT)
 
 # Default target
 .PHONY: all
 ifeq ($(TARGET),host)
-all: build-test build-bytes-test build-process-control-test build-file-corruptor build-file-corruptor-test
+all: build-test build-bytes-test build-process-control-test build-pause-resume-test build-file-corruptor build-file-corruptor-test
 else
-all: build-test build-bytes-test build-process-control-test
+all: build-test build-bytes-test build-process-control-test build-pause-resume-test
 endif
 
 # Create build directories
@@ -116,6 +118,27 @@ $(PROCESS_CONTROL_TEST): $(CLI_WRAPPER_SOURCES) $(PROCESS_CONTROL_TEST_SOURCES) 
 	@echo "Compiler: $(CC)"
 	@echo "Flags: $(CFLAGS)"
 	$(CC) $(CFLAGS) -o $@ $(PROCESS_CONTROL_TEST_SOURCES) $(CLI_WRAPPER_SOURCES) $(LDFLAGS)
+	@echo "Build completed: $@"
+	@echo "Copying test assets..."
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(subst /,\,$(BUILD_TARGET_DIR))\assets" mkdir "$(subst /,\,$(BUILD_TARGET_DIR))\assets"
+	@copy "assets\A10TankKiller_v2.0_3Disk.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy test archive"
+	@copy "assets\test_archive_corrupted.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy corrupted test archive"
+else
+	@mkdir -p $(BUILD_TARGET_DIR)/assets
+	@cp assets/A10TankKiller_v2.0_3Disk.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy test archive"
+	@cp assets/test_archive_corrupted.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy corrupted test archive"
+endif
+
+# Build the pause/resume test executable
+.PHONY: build-pause-resume-test
+build-pause-resume-test: $(PAUSE_RESUME_TEST)
+
+$(PAUSE_RESUME_TEST): $(CLI_WRAPPER_SOURCES) $(PAUSE_RESUME_TEST_SOURCES) | $(BUILD_TARGET_DIR)
+	@echo "Building pause/resume test for target: $(TARGET)"
+	@echo "Compiler: $(CC)"
+	@echo "Flags: $(CFLAGS)"
+	$(CC) $(CFLAGS) -o $@ $(PAUSE_RESUME_TEST_SOURCES) $(CLI_WRAPPER_SOURCES) $(LDFLAGS)
 	@echo "Build completed: $@"
 	@echo "Copying test assets..."
 ifeq ($(OS),Windows_NT)
@@ -204,6 +227,7 @@ help:
 	@echo "  build-test                   Build CLI wrapper test program"
 	@echo "  build-bytes-test             Build CLI byte-level test program"
 	@echo "  build-process-control-test   Build process control test program"
+	@echo "  build-pause-resume-test      Build pause/resume test program"
 	@echo "  build-file-corruptor         Build file corruptor utility (host only)"
 	@echo "  build-file-corruptor-test    Build file corruptor test program (host only)"
 	@echo "  test                         Run tests (host target only)"
