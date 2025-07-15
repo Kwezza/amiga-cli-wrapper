@@ -15,6 +15,8 @@ CLI_WRAPPER_SOURCES = $(SRC_DIR)/cli_wrapper.c $(SRC_DIR)/process_control.c $(SR
 TEST_SOURCES = $(TEST_DIR)/cli_wrapper_test.c
 BYTES_TEST_SOURCES = $(TEST_DIR)/cli_bytes_test.c
 PROCESS_CONTROL_TEST_SOURCES = $(TEST_DIR)/test_process_control.c
+FILE_CORRUPTOR_SOURCES = $(SRC_DIR)/file_corruptor.c
+FILE_CORRUPTOR_TEST_SOURCES = $(TEST_DIR)/file_corruptor_test.c
 
 # Compiler settings per target
 ifeq ($(TARGET),amiga)
@@ -43,10 +45,16 @@ endif
 CLI_WRAPPER_TEST = $(BUILD_TARGET_DIR)/cli_wrapper_test$(EXECUTABLE_EXT)
 CLI_BYTES_TEST = $(BUILD_TARGET_DIR)/cli_bytes_test$(EXECUTABLE_EXT)
 PROCESS_CONTROL_TEST = $(BUILD_TARGET_DIR)/test_process_control$(EXECUTABLE_EXT)
+FILE_CORRUPTOR = $(BUILD_TARGET_DIR)/file_corruptor$(EXECUTABLE_EXT)
+FILE_CORRUPTOR_TEST = $(BUILD_TARGET_DIR)/file_corruptor_test$(EXECUTABLE_EXT)
 
 # Default target
 .PHONY: all
+ifeq ($(TARGET),host)
+all: build-test build-bytes-test build-process-control-test build-file-corruptor build-file-corruptor-test
+else
 all: build-test build-bytes-test build-process-control-test
+endif
 
 # Create build directories
 $(BUILD_TARGET_DIR):
@@ -114,6 +122,46 @@ else
 	@cp assets/A10TankKiller_v2.0_3Disk.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy test archive"
 endif
 
+# Build the file corruptor utility (host only)
+.PHONY: build-file-corruptor
+build-file-corruptor: $(FILE_CORRUPTOR)
+
+$(FILE_CORRUPTOR): $(FILE_CORRUPTOR_SOURCES) | $(BUILD_TARGET_DIR)
+ifeq ($(TARGET),host)
+	@echo "Building file corruptor utility for host target"
+	@echo "Compiler: $(CC)"
+	@echo "Flags: $(CFLAGS)"
+	$(CC) $(CFLAGS) -o $@ $(FILE_CORRUPTOR_SOURCES) $(LDFLAGS)
+	@echo "Build completed: $@"
+else
+	@echo "File corruptor is only available for host target"
+	@echo "Use: make build-file-corruptor TARGET=host"
+endif
+
+# Build the file corruptor test (host only)
+.PHONY: build-file-corruptor-test
+build-file-corruptor-test: $(FILE_CORRUPTOR_TEST)
+
+$(FILE_CORRUPTOR_TEST): $(FILE_CORRUPTOR_TEST_SOURCES) | $(BUILD_TARGET_DIR)
+ifeq ($(TARGET),host)
+	@echo "Building file corruptor test for host target"
+	@echo "Compiler: $(CC)"
+	@echo "Flags: $(CFLAGS)"
+	$(CC) $(CFLAGS) -o $@ $(FILE_CORRUPTOR_TEST_SOURCES) $(LDFLAGS)
+	@echo "Build completed: $@"
+	@echo "Copying test assets..."
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(subst /,\,$(BUILD_TARGET_DIR))\assets" mkdir "$(subst /,\,$(BUILD_TARGET_DIR))\assets"
+	@copy "assets\A10TankKiller_v2.0_3Disk.lha" "$(subst /,\,$(BUILD_TARGET_DIR))\assets\" >nul 2>nul || echo "Warning: Could not copy test archive"
+else
+	@mkdir -p $(BUILD_TARGET_DIR)/assets
+	@cp assets/A10TankKiller_v2.0_3Disk.lha $(BUILD_TARGET_DIR)/assets/ 2>/dev/null || echo "Warning: Could not copy test archive"
+endif
+else
+	@echo "File corruptor test is only available for host target"
+	@echo "Use: make build-file-corruptor-test TARGET=host"
+endif
+
 # Test target (host only)
 .PHONY: test
 test:
@@ -150,6 +198,8 @@ help:
 	@echo "  build-test                   Build CLI wrapper test program"
 	@echo "  build-bytes-test             Build CLI byte-level test program"
 	@echo "  build-process-control-test   Build process control test program"
+	@echo "  build-file-corruptor         Build file corruptor utility (host only)"
+	@echo "  build-file-corruptor-test    Build file corruptor test program (host only)"
 	@echo "  test                         Run tests (host target only)"
 	@echo "  clean                        Remove all build artifacts"
 	@echo "  help                         Show this help message"

@@ -115,6 +115,16 @@ bool lha_controlled_list(const char *cmd, uint32_t *out_total, uint32_t *out_fil
         if (out_file_count) {
             *out_file_count = ctx.file_count;
         }
+        
+        /* Check for exit code */
+        int32_t exit_code;
+        if (get_process_exit_code(&process, &exit_code)) {
+            lha_log_message("LHA list exit code: %ld", (long)exit_code);
+            if (exit_code != 0) {
+                lha_log_message("Warning: LHA list returned non-zero exit code: %ld", (long)exit_code);
+            }
+        }
+        
         lha_log_message("LHA list completed successfully");
         lha_log_message("Total files: %lu", (unsigned long)ctx.file_count);
         lha_log_message("Total size: %lu bytes", (unsigned long)ctx.total_size);
@@ -166,6 +176,16 @@ bool lha_controlled_extract(const char *cmd, uint32_t total_expected)
     bool result = execute_controlled_process(cmd, lha_extract_line_processor, &ctx, &config, &process);
 
     if (result) {
+        /* Check for exit code */
+        int32_t exit_code;
+        if (get_process_exit_code(&process, &exit_code)) {
+            lha_log_message("LHA extract exit code: %ld", (long)exit_code);
+            if (exit_code != 0) {
+                lha_log_message("Warning: LHA extract returned non-zero exit code: %ld", (long)exit_code);
+                lha_log_message("This usually indicates file creation errors or warnings");
+            }
+        }
+        
         lha_log_message("LHA extract completed successfully");
         lha_log_message("Files extracted: %lu", (unsigned long)ctx.file_count);
         lha_log_message("Bytes extracted: %lu", (unsigned long)ctx.cumulative_bytes);

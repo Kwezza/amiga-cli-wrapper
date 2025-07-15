@@ -155,6 +155,36 @@ bool execute_controlled_process(const char *cmd,
     /* Read output and process lines */
     bool result = read_process_output(out_process, line_processor, user_data);
     
+    /* For now, we'll attempt to capture exit code by re-running synchronously */
+    /* This is a temporary solution - in Phase 2 we'll use proper process monitoring */
+    if (result) {
+        /* Re-execute synchronously to get exit code */
+        char sync_cmd[512];
+        snprintf(sync_cmd, sizeof(sync_cmd), "%s >NIL:", cmd);
+        
+        process_log_message("Re-executing command synchronously to get exit code: %s", sync_cmd);
+        
+        struct TagItem sync_tags[] = {
+            {SYS_Input, 0},
+            {SYS_Output, 0},
+            {SYS_Error, 0},
+            {SYS_Asynch, FALSE},  /* Synchronous execution */
+            {TAG_END, 0}
+        };
+        
+        LONG exit_code = SystemTagList(sync_cmd, sync_tags);
+        out_process->exit_code = exit_code;
+        out_process->exit_code_valid = true;
+        
+        process_log_message("Command exit code: %ld", exit_code);
+        
+        /* If exit code is non-zero, consider it a warning but not a failure */
+        /* LHA returns non-zero codes for warnings (like file creation errors) */
+        if (exit_code != 0) {
+            process_log_message("Warning: Process completed with non-zero exit code: %ld", exit_code);
+        }
+    }
+    
     process_log_message("Process completed with result: %s", result ? "success" : "failure");
     
     return result;
@@ -287,6 +317,23 @@ void cleanup_controlled_process(controlled_process_t *process)
     }
 }
 
+bool get_process_exit_code(const controlled_process_t *process, int32_t *out_exit_code)
+{
+    if (!process || !out_exit_code) {
+        return false;
+    }
+
+    if (!process->exit_code_valid) {
+        process_log_message("Exit code not available for process: %s", process->process_name);
+        return false;
+    }
+
+    *out_exit_code = (int32_t)process->exit_code;
+    process_log_message("Retrieved exit code %ld for process: %s", 
+                       (long)process->exit_code, process->process_name);
+    return true;
+}
+
 /* Internal helper functions */
 
 static void process_log_message(const char *format, ...)
@@ -363,18 +410,25 @@ static bool spawn_amiga_process(const char *cmd, const char *pipe_name, controll
     
     process_log_message("Spawning process with command: %s", full_cmd);
     
+    /* Initialize exit code fields */
+    process->exit_code = 0;
+    process->exit_code_valid = false;
+    
     /* Create process tags for SystemTagList */
     struct TagItem tags[] = {
         {SYS_Input, 0},
         {SYS_Output, 0},
         {SYS_Error, 0},
-        {SYS_Asynch, TRUE},
+        {SYS_Asynch, TRUE},  /* Keep async for now - we'll enhance this in next phase */
         {TAG_END, 0}
     };
     
     /* Execute command asynchronously */
-    if (SystemTagList(full_cmd, tags) != 0) {
-        process_log_message("Failed to execute command");
+    LONG result = SystemTagList(full_cmd, tags);
+    if (result != 0) {
+        process_log_message("Failed to execute command, immediate error: %ld", result);
+        process->exit_code = result;
+        process->exit_code_valid = true;
         return false;
     }
     

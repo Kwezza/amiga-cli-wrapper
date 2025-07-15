@@ -23,13 +23,16 @@ typedef struct {
     BPTR input_pipe;                  /* To send commands to child */
     BPTR output_pipe;                 /* To receive output from child */
     ULONG death_signal;               /* Signal mask for death notification */
+    LONG exit_code;                   /* Exit code from process */
 #else
     void *child_process;              /* Host stub */
     void *input_pipe;                 /* Host stub */
     void *output_pipe;                /* Host stub */
     uint32_t death_signal;            /* Host stub */
+    int32_t exit_code;                /* Host stub */
 #endif
     bool process_running;             /* Current status flag */
+    bool exit_code_valid;             /* True if exit_code contains valid data */
     char process_name[32];            /* For debugging */
 } controlled_process_t;
 
@@ -119,6 +122,16 @@ bool force_kill_process(controlled_process_t *process);
  * @param process Process control structure to clean up
  */
 void cleanup_controlled_process(controlled_process_t *process);
+
+/**
+ * @brief Get the exit code of a completed process
+ *
+ * @param process Process control structure
+ * @param out_exit_code Pointer to receive the exit code
+ * @return true if exit code is valid and retrieved
+ * @return false if process still running or exit code not available
+ */
+bool get_process_exit_code(const controlled_process_t *process, int32_t *out_exit_code);
 
 /**
  * @brief Initialize process control system
